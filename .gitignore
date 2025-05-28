@@ -1,0 +1,54 @@
+# Build results
+bin/
+obj/
+
+# User-specific files
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
+
+# VS Code
+.vscode/
+
+# Visual Studio working folder
+.vs/
+
+# ASP.NET scaffolding
+ScaffoldingReadMe.txt
+
+# Dotnet-specific
+*.dbmdl
+*.pdb
+*.cache
+*.log
+*.bak
+*.tmp
+
+# Configuration files
+appsettings.*.json
+
+# Secrets
+secrets.json
+
+# Logs
+logs/
+*.log
+
+# EF Core Migrations (keep only if needed)
+# Migrations/
+
+# Environment files
+.env
+.env.*
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# npm/yarn (if you use React for frontend later)
+node_modules/
