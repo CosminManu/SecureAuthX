@@ -1,6 +1,10 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using SecureAuthX.API.Data;
+using Microsoft.AspNetCore.Identity;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,7 +16,31 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
 	.AddEntityFrameworkStores<ApplicationDbContext>()
 	.AddDefaultTokenProviders();
 
-builder.Services.AddAuthentication();
+
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+
+builder.Services.AddAuthentication(opt =>
+{
+	opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+	opt.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+	.AddJwtBearer(opt =>
+{
+	opt.TokenValidationParameters = new TokenValidationParameters
+	{
+		ValidateIssuer = true,
+		ValidateAudience = true,
+		ValidateLifetime = true,
+		ValidateIssuerSigningKey = true,
+		ValidIssuer = jwtSettings["Issuer"],
+		ValidAudience = jwtSettings["Audience"],
+		IssuerSigningKey = new SymmetricSecurityKey(
+			Encoding.UTF8.GetBytes(jwtSettings["Key"])
+		)
+	};
+});
+
+
 builder.Services.AddAuthorization();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -20,6 +48,18 @@ builder.Services.AddSwaggerGen();
 
 
 var app = builder.Build();
+
+var scope = app.Services.CreateScope();
+var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+string[] roles = new[] { "Admin", "User" };
+
+foreach(var role in roles)
+{
+	if(!await roleManager.RoleExistsAsync(role))
+	{
+		await roleManager.CreateAsync(new IdentityRole(role));
+	}
+}
 
 if (app.Environment.IsDevelopment())
 {

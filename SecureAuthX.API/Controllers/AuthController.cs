@@ -41,6 +41,8 @@ namespace SecureAuthX.API.Controllers
 				return BadRequest(result.Errors);
 			}
 
+			await _userManager.AddToRoleAsync(user, "User");
+
 			return Ok("User registered successfully.");
 		}
 
@@ -67,6 +69,34 @@ namespace SecureAuthX.API.Controllers
 			var user = await _userManager.FindByEmailAsync(email);
 
 			return Ok(new {user.FullName, user.Email});
+		}
+
+
+		[Authorize(Roles = "Admin")]
+		[HttpPost("assign-role")]
+		public async Task<IActionResult> AssignRole([FromBody] AssignRoleDto roleDto)
+		{
+			var user = await _userManager.FindByEmailAsync(roleDto.Email);
+			if (user == null)
+			{
+				return NotFound("User not found.");
+			}
+			var result = await _userManager.AddToRoleAsync(user, roleDto.Role);
+			if (!result.Succeeded)
+			{
+				return BadRequest(result.Errors);
+
+			}
+
+			return Ok($"Role '{roleDto.Role}' has been assigned to user {user.Email}.");
+		}
+
+
+		[Authorize(Roles = "Admin")]
+		[HttpGet("admin-data")]
+		public IActionResult GetAdminData()
+		{
+			return Ok("This route is only accesible for admins.");
 		}
 
 
