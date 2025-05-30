@@ -99,6 +99,13 @@ namespace SecureAuthX.API.Controllers
 			return Ok("This route is only accesible for admins.");
 		}
 
+		[AllowAnonymous]
+		[HttpGet("ping")]
+		public IActionResult Ping()
+		{
+			return Ok("SecureAuthX API is active");
+		}
+
 
 		private string GenerateJwtToken(ApplicationUser user)
 		{
