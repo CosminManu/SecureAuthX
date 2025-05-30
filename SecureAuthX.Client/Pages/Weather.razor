@@ -1,0 +1,22 @@
+﻿@page "/weather"
+@inject HttpClient Http
+
+<h3>Test conexiune API</h3>
+
+<p>@message</p>
+
+@code {
+    private string message = "Se încarcă...";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            message = await Http.GetStringAsync("weatherforecast");
+        }
+        catch (Exception ex)
+        {
+            message = $"Eroare la conectare: {ex.Message}";
+        }
+    }
+}
