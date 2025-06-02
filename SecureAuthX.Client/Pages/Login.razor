@@ -1,0 +1,68 @@
+﻿@page "/login"
+@using SecureAuthX.Client.Models
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+
+<h3>Login</h3>
+
+
+@if (!string.IsNullOrEmpty(error))
+{
+	<div class="text-danger">@error</div>
+}
+
+
+<EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+	<DataAnnotationsValidator />
+	<ValidationSummary/>
+
+	<div>
+		<label>Email:</label>
+		<InputText @bind-Value="loginModel.Email" class="form-control" />
+	</div>
+
+	<div>
+		<label>Password:</label>
+		<InputText @bind-Value="loginModel.Password" type="password" class="form-control" />
+	</div>
+
+
+	<button class="btn btn-primary mt-2" type="submit">Login</button>
+</EditForm>
+
+
+
+@code {
+
+	private LoginDto loginModel = new();
+	private string error = "";
+
+	private async Task HandleLogin()
+	{
+		try
+		{
+			var response = await Http.PostAsJsonAsync("/api/auth/login", loginModel);
+			if (response.IsSuccessStatusCode)
+			{
+				var result = await response.Content.ReadFromJsonAsync<TokenResponse>();
+
+
+				await JS.InvokeVoidAsync("localStorage.setItem", "authToken", result!.Token);
+
+
+				Nav.NavigateTo("/"); // redirecționează după login
+			}
+			else
+			{
+				error = "Login failed. Check credentials.";
+			}
+		} catch (Exception ex)
+		{
+			error = $"Eroare: {ex.Message}";
+		}
+	}
+
+
+}
