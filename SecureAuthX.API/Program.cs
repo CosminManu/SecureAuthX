@@ -5,6 +5,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using SecureAuthX.API.Data;
 using Microsoft.AspNetCore.Identity;
+using SecureAuthX.API.Services.Interfaces;
+using SecureAuthX.API.Services;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +17,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
 	.AddEntityFrameworkStores<ApplicationDbContext>()
 	.AddDefaultTokenProviders();
+
+
+
+builder.Services.AddScoped<IAuditService, AuditService>();
+
 
 
 builder.Services.AddCors(options =>
