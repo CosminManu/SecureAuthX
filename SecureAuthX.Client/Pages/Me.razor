@@ -1,0 +1,44 @@
+﻿@page "/me"
+@inject HttpClient Http
+@inject NavigationManager Nav
+@using System.Net.Http.Json
+@using SecureAuthX.Client.Models
+
+<h3>Profil utilizator</h3>
+
+@if (error != null)
+{
+    <p class="text-danger">@error</p>
+}
+else if (user != null)
+{
+    <div class="card p-3">
+        <p><strong>Nume:</strong> @user.FullName</p>
+        <p><strong>Email:</strong> @user.Email</p>
+    </div>
+}
+else
+{
+    <p>Se încarcă datele...</p>
+}
+
+
+@code {
+    private UserDto? user;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            user = await Http.GetFromJsonAsync<UserDto>("/api/auth/me");
+        }
+        catch (Exception ex)
+        {
+            error = "Nu s-au putut încărca datele. Asigură-te că ești autentificat.";
+            Console.WriteLine(ex.Message);
+        }
+    }
+
+
+}
