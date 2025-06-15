@@ -52,24 +52,40 @@ namespace SecureAuthX.API.Controllers
 			return Ok("User registered successfully.");
 		}
 
-		[HttpPost("login")]
-		public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
-		{
-			var user = await _userManager.FindByEmailAsync(loginDto.Email);
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
+        {
+            var user = await _userManager.FindByEmailAsync(loginDto.Email);
 
-			if (user == null || !await _userManager.CheckPasswordAsync(user, loginDto.Password))
-			{
-				await _auditService.LogAsync(loginDto.Email, "Failed login", HttpContext);
-				return Unauthorized("Invalid credentials");
-			}
+            if (user == null || !await _userManager.CheckPasswordAsync(user, loginDto.Password))
+            {
+                await _auditService.LogAsync(loginDto.Email, "Failed login", HttpContext);
+                return Unauthorized("Invalid credentials");
+            }
 
-			var token = GenerateJwtToken(user);
-			await _auditService.LogAsync(loginDto.Email, "Successful login", HttpContext);
+            var token = GenerateJwtToken(user);
 
-			return Ok(new { token });
-		}
+            // save jwt session
+            using (var scope = HttpContext.RequestServices.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                context.UserSessions.Add(new UserSession
+                {
+                    UserId = user.Id,
+                    Token = token,
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "",
+                    UserAgent = Request.Headers["User-Agent"].ToString()
+                });
+                await context.SaveChangesAsync();
+            }
 
-		[Authorize]
+            await _auditService.LogAsync(loginDto.Email, "Successful login", HttpContext);
+
+            return Ok(new { token });
+        }
+
+
+        [Authorize]
 		[HttpGet("me")]
 		public async Task<IActionResult> GetMe()
 		{
@@ -193,9 +209,29 @@ namespace SecureAuthX.API.Controllers
 			return Ok(logs);
 		}
 
+        [Authorize]
+        [HttpPost("logout-all")]
+        public async Task<IActionResult> LogoutAll()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("Invalid user context");
+            }
+
+            using var scope = HttpContext.RequestServices.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            var sessions = context.UserSessions.Where(s => s.UserId == userId);
+            context.UserSessions.RemoveRange(sessions);
+            await context.SaveChangesAsync();
+
+            return Ok("All sessions have been cleared.");
+        }
 
 
-		private string GenerateJwtToken(ApplicationUser user)
+
+        private string GenerateJwtToken(ApplicationUser user)
 		{
 			var claims = new[]
 			{

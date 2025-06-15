@@ -11,5 +11,7 @@ namespace SecureAuthX.API.Data
 			: base(options) { }
 
 		public DbSet<AuditLog> AuditLogs { get; set; }
-	}
+
+        public DbSet<UserSession> UserSessions { get; set; }
+    }
 }

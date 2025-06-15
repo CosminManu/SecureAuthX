@@ -15,11 +15,6 @@
             </NavLink>
         </div>
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="login">
-                <span class="oi oi-person" aria-hidden="true"></span> Login
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
             <NavLink class="nav-link" href="me">
                 <span class="oi oi-person" aria-hidden="true"></span> Profilul meu
             </NavLink>
@@ -39,6 +34,20 @@
                 <span class="oi oi-list-rich" aria-hidden="true"></span> Loguri activitate
             </NavLink>
         </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="login">
+                <span class="oi oi-person" aria-hidden="true"></span> Login
+            </NavLink>
+        </div>
+        <div class="nav-item px-3 dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="oi oi-account-logout" aria-hidden="true"></span> Logout
+            </a>
+            <ul class="dropdown-menu show">
+                <li><a class="dropdown-item" href="#" @onclick="LogoutThisDevice">Doar de pe acest dispozitiv</a></li>
+                <li><a class="dropdown-item text-danger" href="#" @onclick="LogoutAllDevices">De pe toate dispozitivele</a></li>
+            </ul>
+        </div>
     </nav>
 </div>
 
@@ -51,4 +60,35 @@
     {
         collapseNavMenu = !collapseNavMenu;
     }
+
+    private async Task LogoutThisDevice()
+    {
+        await JS.InvokeVoidAsync("localStorage.removeItem", "authToken");
+        await JS.InvokeVoidAsync("alert", "Te-ai delogat de pe acest dispozitiv.");
+        Nav.NavigateTo("login", true);
+    }
+
+    private async Task LogoutAllDevices()
+    {
+        var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "api/auth/logout-all");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var response = await Http.SendAsync(request);
+        if (response.IsSuccessStatusCode)
+        {
+            await JS.InvokeVoidAsync("localStorage.removeItem", "authToken");
+            await JS.InvokeVoidAsync("alert", "Te-ai delogat de pe toate dispozitivele.");
+            Nav.NavigateTo("login", true);
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("alert", "Delogarea globală a eșuat.");
+        }
+    }
+
+    [Inject] public NavigationManager Nav { get; set; } = default!;
+    [Inject] public IJSRuntime JS { get; set; } = default!;
+    [Inject] public HttpClient Http { get; set; } = default!;
 }
